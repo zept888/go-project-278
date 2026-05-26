@@ -1,0 +1,6 @@
+.idea
+.git
+.env
+bin/app
+bin/app.exe
+*.exe

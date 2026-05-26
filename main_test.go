@@ -10,6 +10,7 @@ import (
 
 func TestPing(t *testing.T) {
 	gin.SetMode(gin.TestMode)
+	t.Setenv("SENTRY_DSN", "")
 
 	router := setupRouter()
 	req := httptest.NewRequest(http.MethodGet, "/ping", nil)

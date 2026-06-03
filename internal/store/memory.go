@@ -4,13 +4,16 @@ import (
 	"context"
 	"sort"
 	"sync"
+	"time"
 )
 
 type Memory struct {
-	mu     sync.Mutex
-	nextID int64
-	byID   map[int64]Link
-	byName map[string]int64
+	mu        sync.Mutex
+	nextID    int64
+	byID      map[int64]Link
+	byName    map[string]int64
+	visits    []LinkVisit
+	nextVisit int64
 }
 
 func NewMemory() *Memory {
@@ -125,4 +128,46 @@ func (m *Memory) Delete(_ context.Context, id int64) error {
 	delete(m.byName, link.ShortName)
 	delete(m.byID, id)
 	return nil
+}
+
+func (m *Memory) CountVisits(_ context.Context) (int64, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	return int64(len(m.visits)), nil
+}
+
+func (m *Memory) ListVisits(_ context.Context, offset, limit int) ([]LinkVisit, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
+	all := append([]LinkVisit(nil), m.visits...)
+	sort.Slice(all, func(i, j int) bool { return all[i].ID < all[j].ID })
+	if offset >= len(all) || limit <= 0 {
+		return []LinkVisit{}, nil
+	}
+	end := offset + limit
+	if end > len(all) {
+		end = len(all)
+	}
+	out := make([]LinkVisit, end-offset)
+	copy(out, all[offset:end])
+	return out, nil
+}
+
+func (m *Memory) CreateVisit(_ context.Context, params CreateVisitParams) (LinkVisit, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
+	m.nextVisit++
+	visit := LinkVisit{
+		ID:        m.nextVisit,
+		LinkID:    params.LinkID,
+		IP:        params.IP,
+		UserAgent: params.UserAgent,
+		Referer:   params.Referer,
+		Status:    params.Status,
+		CreatedAt: time.Now().UTC(),
+	}
+	m.visits = append(m.visits, visit)
+	return visit, nil
 }

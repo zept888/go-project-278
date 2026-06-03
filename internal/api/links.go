@@ -23,19 +23,11 @@ type linkBody struct {
 
 func (h *Links) List(c *gin.Context) {
 	ctx := c.Request.Context()
-	rangeRaw := c.Query("range")
 
-	var offset, limit int
-	var rangeStart, rangeEnd int
-	hasRange := rangeRaw != ""
-	if hasRange {
-		var err error
-		rangeStart, rangeEnd, err = linkutil.ParseRange(rangeRaw)
-		if err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "invalid range"})
-			return
-		}
-		offset, limit = rangeStart, rangeEnd-rangeStart
+	offset, limit, rangeStart, rangeEnd, hasRange, err := parseListRange(c)
+	if err != nil {
+		writeRangeError(c)
+		return
 	}
 
 	total, err := h.Store.Count(ctx)
@@ -152,12 +144,23 @@ func (h *Links) Delete(c *gin.Context) {
 }
 
 func (h *Links) Redirect(c *gin.Context) {
-	link, err := h.Store.GetByShortName(c.Request.Context(), c.Param("shortName"))
+	ctx := c.Request.Context()
+	link, err := h.Store.GetByShortName(ctx, c.Param("code"))
 	if err != nil {
 		writeStoreError(c, err)
 		return
 	}
-	c.Redirect(http.StatusFound, link.OriginalURL)
+
+	status := http.StatusFound
+	_, _ = h.Store.CreateVisit(ctx, store.CreateVisitParams{
+		LinkID:    link.ID,
+		IP:        c.ClientIP(),
+		UserAgent: c.Request.UserAgent(),
+		Referer:   c.Request.Referer(),
+		Status:    status,
+	})
+
+	c.Redirect(status, link.OriginalURL)
 }
 
 func writeStoreError(c *gin.Context, err error) {

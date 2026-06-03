@@ -27,6 +27,7 @@ func initSentry() error {
 
 func setupRouter(st store.Store, baseURL string) *gin.Engine {
 	router := gin.Default()
+	router.TrustedPlatform = gin.PlatformCloudflare
 	router.Use(api.CORSMiddleware())
 
 	sentryEnabled := os.Getenv("SENTRY_DSN") != ""
@@ -49,13 +50,14 @@ func setupRouter(st store.Store, baseURL string) *gin.Engine {
 
 	if st != nil {
 		h := &api.Links{Store: st, BaseURL: baseURL}
-		router.GET("/r/:shortName", h.Redirect)
+		router.GET("/r/:code", h.Redirect)
 		links := router.Group("/api/links")
 		links.GET("", h.List)
 		links.POST("", h.Create)
 		links.GET("/:id", h.Get)
 		links.PUT("/:id", h.Update)
 		links.DELETE("/:id", h.Delete)
+		router.GET("/api/link_visits", h.ListVisits)
 	}
 
 	return router

@@ -32,5 +32,9 @@ func ParseRange(raw string) (start, end int, err error) {
 }
 
 func ContentRange(start, end int, total int64) string {
-	return fmt.Sprintf("links %d-%d/%d", start, end, total)
+	return ContentRangeResource("links", start, end, total)
+}
+
+func ContentRangeResource(resource string, start, end int, total int64) string {
+	return fmt.Sprintf("%s %d-%d/%d", resource, start, end, total)
 }

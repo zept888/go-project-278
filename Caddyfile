@@ -1,13 +1,17 @@
-:{$PORT:8080} {
-	root * /app/public
+:80
 
-	@backend path /api/* /r/* /ping /debug/*
-	handle @backend {
-		reverse_proxy 127.0.0.1:8081
-	}
+# Статика из /app/public
+root * /app/public
 
-	handle {
-		try_files {path} /index.html
-		file_server
-	}
+# Отдаём /assets/* как есть
+handle /assets/* {
+	file_server
 }
+
+# Отдаём корень как index.html
+handle / {
+	file_server
+}
+
+# Всё остальное — в приложение на 8080
+reverse_proxy localhost:8080

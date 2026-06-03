@@ -17,8 +17,18 @@ func NewPostgres(q *db.Queries) *Postgres {
 	return &Postgres{q: q}
 }
 
-func (p *Postgres) List(ctx context.Context) ([]Link, error) {
-	rows, err := p.q.ListLinks(ctx)
+func (p *Postgres) Count(ctx context.Context) (int64, error) {
+	return p.q.CountLinks(ctx)
+}
+
+func (p *Postgres) List(ctx context.Context, offset, limit int) ([]Link, error) {
+	if limit <= 0 {
+		return []Link{}, nil
+	}
+	rows, err := p.q.ListLinksPage(ctx, db.ListLinksPageParams{
+		Limit:  int32(limit),
+		Offset: int32(offset),
+	})
 	if err != nil {
 		return nil, err
 	}

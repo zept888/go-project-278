@@ -17,7 +17,8 @@ type Link struct {
 }
 
 type Store interface {
-	List(ctx context.Context) ([]Link, error)
+	Count(ctx context.Context) (int64, error)
+	List(ctx context.Context, offset, limit int) ([]Link, error)
 	Get(ctx context.Context, id int64) (Link, error)
 	GetByShortName(ctx context.Context, shortName string) (Link, error)
 	Create(ctx context.Context, originalURL, shortName string) (Link, error)

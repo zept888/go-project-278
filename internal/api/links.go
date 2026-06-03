@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"net/http"
-	"sort"
 	"strings"
 
 	"github.com/gin-gonic/gin"
@@ -23,12 +22,41 @@ type linkBody struct {
 }
 
 func (h *Links) List(c *gin.Context) {
-	links, err := h.Store.List(c.Request.Context())
+	ctx := c.Request.Context()
+	rangeRaw := c.Query("range")
+
+	var offset, limit int
+	var rangeStart, rangeEnd int
+	hasRange := rangeRaw != ""
+	if hasRange {
+		var err error
+		rangeStart, rangeEnd, err = linkutil.ParseRange(rangeRaw)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "invalid range"})
+			return
+		}
+		offset, limit = rangeStart, rangeEnd-rangeStart
+	}
+
+	total, err := h.Store.Count(ctx)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-	sort.Slice(links, func(i, j int) bool { return links[i].ID < links[j].ID })
+	if !hasRange {
+		offset, limit = 0, int(total)
+	}
+
+	links, err := h.Store.List(ctx, offset, limit)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	if hasRange {
+		c.Header("Content-Range", linkutil.ContentRange(rangeStart, rangeEnd, total))
+	}
+
 	out := make([]map[string]any, len(links))
 	for i, link := range links {
 		out[i] = linkutil.ToResponse(link.ID, link.OriginalURL, link.ShortName, h.BaseURL)

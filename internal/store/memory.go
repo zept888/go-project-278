@@ -2,6 +2,7 @@ package store
 
 import (
 	"context"
+	"sort"
 	"sync"
 )
 
@@ -19,15 +20,36 @@ func NewMemory() *Memory {
 	}
 }
 
-func (m *Memory) List(_ context.Context) ([]Link, error) {
+func (m *Memory) Count(_ context.Context) (int64, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	return int64(len(m.byID)), nil
+}
+
+func (m *Memory) List(_ context.Context, offset, limit int) ([]Link, error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
+	all := m.sortedLocked()
+	if offset >= len(all) || limit <= 0 {
+		return []Link{}, nil
+	}
+	end := offset + limit
+	if end > len(all) {
+		end = len(all)
+	}
+	out := make([]Link, end-offset)
+	copy(out, all[offset:end])
+	return out, nil
+}
+
+func (m *Memory) sortedLocked() []Link {
 	out := make([]Link, 0, len(m.byID))
 	for _, link := range m.byID {
 		out = append(out, link)
 	}
-	return out, nil
+	sort.Slice(out, func(i, j int) bool { return out[i].ID < out[j].ID })
+	return out
 }
 
 func (m *Memory) Get(_ context.Context, id int64) (Link, error) {

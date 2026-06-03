@@ -27,6 +27,7 @@ func initSentry() error {
 
 func setupRouter(st store.Store, baseURL string) *gin.Engine {
 	router := gin.Default()
+	router.Use(api.CORSMiddleware())
 
 	sentryEnabled := os.Getenv("SENTRY_DSN") != ""
 	if sentryEnabled {
@@ -63,7 +64,8 @@ func setupRouter(st store.Store, baseURL string) *gin.Engine {
 func openStore(ctx context.Context) (store.Store, func(), error) {
 	dsn := os.Getenv("DATABASE_URL")
 	if dsn == "" {
-		return nil, func() {}, nil
+		log.Println("DATABASE_URL is not set, using in-memory store (local dev only)")
+		return store.NewMemory(), func() {}, nil
 	}
 	pool, err := pgxpool.New(ctx, dsn)
 	if err != nil {
@@ -98,10 +100,6 @@ func main() {
 		log.Fatalf("database connection failed: %v", err)
 	}
 	defer closeDB()
-
-	if st == nil {
-		log.Println("DATABASE_URL is not set, /api/links routes are disabled")
-	}
 
 	if err := setupRouter(st, baseURL(port)).Run(":" + port); err != nil {
 		log.Fatal(err)

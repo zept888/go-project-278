@@ -9,8 +9,11 @@ tidy: ## Tidy up dependencies, format code, and run vet
 	go fmt ./...
 	go vet ./...
 
-dev: ## Run the API server in development mode
-	go run main.go
+dev: ## Run API and frontend together (requires npm install)
+	npm run dev
+
+dev-api: ## Run the API server only
+	go run .
 
 build: ## Build application binary
 	go build -o bin/app main.go

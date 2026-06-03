@@ -1,0 +1,21 @@
+{
+  "name": "go-project-278",
+  "version": "1.0.0",
+  "private": true,
+  "bin": {
+    "start-hexlet-url-shortener-frontend": "./scripts/start-frontend.cjs"
+  },
+  "scripts": {
+    "api": "go run .",
+    "start-hexlet-url-shortener-frontend": "node scripts/start-frontend.cjs",
+    "frontend": "node scripts/start-frontend.cjs",
+    "dev": "concurrently -k -n api,ui -c blue,green npm:api npm:frontend"
+  },
+  "devDependencies": {
+    "@hexlet/project-url-shortener-frontend": "1.0.0",
+    "concurrently": "^9.2.1"
+  },
+  "engines": {
+    "node": ">=24.1.0"
+  }
+}

@@ -1,0 +1,13 @@
+:{$PORT:8080} {
+	root * /app/public
+
+	@backend path /api/* /r/* /ping /debug/*
+	handle @backend {
+		reverse_proxy 127.0.0.1:8081
+	}
+
+	handle {
+		try_files {path} /index.html
+		file_server
+	}
+}

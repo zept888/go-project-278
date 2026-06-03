@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
 	"github.com/gin-gonic/gin"
@@ -129,6 +130,32 @@ func TestShortNameConflict(t *testing.T) {
 
 	if rec.Code != http.StatusConflict {
 		t.Fatalf("want %d, got %d body=%s", http.StatusConflict, rec.Code, rec.Body.String())
+	}
+}
+
+func TestCORS(t *testing.T) {
+	router := testRouter(t)
+
+	req := httptest.NewRequest(http.MethodOptions, "/api/links", nil)
+	req.Header.Set("Origin", "http://localhost:5173")
+	req.Header.Set("Access-Control-Request-Method", "GET")
+	rec := httptest.NewRecorder()
+	router.ServeHTTP(rec, req)
+
+	if rec.Header().Get("Access-Control-Allow-Origin") != "http://localhost:5173" {
+		t.Fatalf("OPTIONS Allow-Origin: got %q", rec.Header().Get("Access-Control-Allow-Origin"))
+	}
+
+	req = httptest.NewRequest(http.MethodGet, "/api/links?range=[0,10]", nil)
+	req.Header.Set("Origin", "http://localhost:5173")
+	rec = httptest.NewRecorder()
+	router.ServeHTTP(rec, req)
+
+	if rec.Header().Get("Access-Control-Allow-Origin") != "http://localhost:5173" {
+		t.Fatalf("GET Allow-Origin: got %q", rec.Header().Get("Access-Control-Allow-Origin"))
+	}
+	if !strings.Contains(rec.Header().Get("Access-Control-Expose-Headers"), "Content-Range") {
+		t.Fatalf("Expose-Headers: got %q", rec.Header().Get("Access-Control-Expose-Headers"))
 	}
 }
 

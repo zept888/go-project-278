@@ -4,3 +4,4 @@
 bin/app
 bin/app.exe
 *.exe
+node_modules

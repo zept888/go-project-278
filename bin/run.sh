@@ -12,11 +12,5 @@ else
 	echo "[run.sh] DATABASE_URL is not set, skipping migrations"
 fi
 
-echo "[run.sh] Starting Go API on :8081"
-PORT=8081 /app/bin/app &
-APP_PID=$!
-
-trap 'kill "$APP_PID" 2>/dev/null || true' EXIT INT TERM
-
-echo "[run.sh] Starting Caddy on :${PORT:-8080}"
-exec caddy run --config /etc/caddy/Caddyfile --adapter caddyfile
+echo "[run.sh] Starting Go app"
+exec /app/bin/app

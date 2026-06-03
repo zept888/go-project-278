@@ -58,6 +58,8 @@ func setupRouter(st store.Store, baseURL string) *gin.Engine {
 		links.DELETE("/:id", h.Delete)
 	}
 
+	api.RegisterStatic(router)
+
 	return router
 }
 

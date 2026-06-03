@@ -20,8 +20,8 @@ COPY . .
 RUN --mount=type=cache,target=/root/.cache/go-build \
     CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o /build/app .
 
-# Runtime: Caddy + API
-FROM caddy:2.10-alpine
+# Runtime
+FROM alpine:3.22
 
 RUN apk add --no-cache ca-certificates
 
@@ -32,7 +32,6 @@ COPY --from=backend-builder /build/code/db/migrations /app/db/migrations
 COPY --from=backend-builder /go/bin/goose /usr/local/bin/goose
 COPY --from=frontend /app/node_modules/@hexlet/project-url-shortener-frontend/dist /app/public
 
-COPY Caddyfile /etc/caddy/Caddyfile
 COPY bin/run.sh /app/bin/run.sh
 RUN chmod +x /app/bin/run.sh
 

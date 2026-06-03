@@ -3,9 +3,11 @@ package store
 import (
 	"context"
 	"errors"
+	"time"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
+	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/zept888/go-project-278/internal/db"
 )
 
@@ -90,7 +92,15 @@ func toLink(row db.Link) Link {
 		ID:          row.ID,
 		OriginalURL: row.OriginalUrl,
 		ShortName:   row.ShortName,
+		CreatedAt:   timestamptzUTC(row.CreatedAt),
 	}
+}
+
+func timestamptzUTC(t pgtype.Timestamptz) time.Time {
+	if !t.Valid {
+		return time.Time{}
+	}
+	return t.Time.UTC()
 }
 
 func mapErr(err error) error {

@@ -5,6 +5,9 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	"time"
+
+	"github.com/zept888/go-project-278/internal/store"
 )
 
 const shortNameChars = "abcdefghijklmnopqrstuvwxyz0123456789"
@@ -13,13 +16,17 @@ func ShortURL(baseURL, shortName string) string {
 	return strings.TrimRight(baseURL, "/") + "/r/" + shortName
 }
 
-func ToResponse(linkID int64, originalURL, shortName, baseURL string) map[string]any {
-	return map[string]any{
-		"id":           linkID,
-		"original_url": originalURL,
-		"short_name":   shortName,
-		"short_url":    ShortURL(baseURL, shortName),
+func ToResponse(link store.Link, baseURL string) map[string]any {
+	out := map[string]any{
+		"id":           link.ID,
+		"original_url": link.OriginalURL,
+		"short_name":   link.ShortName,
+		"short_url":    ShortURL(baseURL, link.ShortName),
 	}
+	if !link.CreatedAt.IsZero() {
+		out["created_at"] = link.CreatedAt.UTC().Format(time.RFC3339)
+	}
+	return out
 }
 
 func RandomShortName(length int) (string, error) {

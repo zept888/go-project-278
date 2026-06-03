@@ -45,7 +45,7 @@ func (h *Links) List(c *gin.Context) {
 
 	out := make([]map[string]any, len(links))
 	for i, link := range links {
-		out[i] = linkutil.ToResponse(link.ID, link.OriginalURL, link.ShortName, h.BaseURL)
+		out[i] = linkutil.ToResponse(link, h.BaseURL)
 	}
 	c.JSON(http.StatusOK, out)
 }
@@ -61,7 +61,7 @@ func (h *Links) Create(c *gin.Context) {
 		writeStoreError(c, err)
 		return
 	}
-	c.JSON(http.StatusCreated, linkutil.ToResponse(link.ID, link.OriginalURL, link.ShortName, h.BaseURL))
+	c.JSON(http.StatusCreated, linkutil.ToResponse(link, h.BaseURL))
 }
 
 func (h *Links) createLink(ctx context.Context, originalURL, shortName string) (store.Link, error) {
@@ -95,7 +95,7 @@ func (h *Links) Get(c *gin.Context) {
 		writeStoreError(c, err)
 		return
 	}
-	c.JSON(http.StatusOK, linkutil.ToResponse(link.ID, link.OriginalURL, link.ShortName, h.BaseURL))
+	c.JSON(http.StatusOK, linkutil.ToResponse(link, h.BaseURL))
 }
 
 func (h *Links) Update(c *gin.Context) {
@@ -114,7 +114,7 @@ func (h *Links) Update(c *gin.Context) {
 		writeStoreError(c, err)
 		return
 	}
-	c.JSON(http.StatusOK, linkutil.ToResponse(link.ID, link.OriginalURL, link.ShortName, h.BaseURL))
+	c.JSON(http.StatusOK, linkutil.ToResponse(link, h.BaseURL))
 }
 
 func (h *Links) Delete(c *gin.Context) {

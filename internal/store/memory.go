@@ -90,6 +90,7 @@ func (m *Memory) Create(_ context.Context, originalURL, shortName string) (Link,
 		ID:          m.nextID,
 		OriginalURL: originalURL,
 		ShortName:   shortName,
+		CreatedAt:   time.Now().UTC(),
 	}
 	m.byID[link.ID] = link
 	m.byName[shortName] = link.ID

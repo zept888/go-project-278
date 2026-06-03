@@ -15,6 +15,7 @@ type Link struct {
 	ID          int64
 	OriginalURL string
 	ShortName   string
+	CreatedAt   time.Time
 }
 
 type LinkVisit struct {

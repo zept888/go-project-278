@@ -69,6 +69,60 @@ func TestCreateShortNameTooShort(t *testing.T) {
 	}
 }
 
+func TestCreateSetsCreatedAt(t *testing.T) {
+	router := testRouter(t)
+
+	body := `{"original_url":"https://example.com","short_name":"ctime"}`
+	req := httptest.NewRequest(http.MethodPost, "/api/links", bytes.NewBufferString(body))
+	req.Header.Set("Content-Type", "application/json")
+	rec := httptest.NewRecorder()
+	router.ServeHTTP(rec, req)
+	if rec.Code != http.StatusCreated {
+		t.Fatalf("want %d, got %d body=%s", http.StatusCreated, rec.Code, rec.Body.String())
+	}
+	var created map[string]any
+	if err := json.Unmarshal(rec.Body.Bytes(), &created); err != nil {
+		t.Fatal(err)
+	}
+	if created["created_at"] == nil || created["created_at"] == "" {
+		t.Fatalf("expected created_at in response: %v", created)
+	}
+}
+
+func TestUpdateShortNameConflict(t *testing.T) {
+	router := testRouter(t)
+
+	for _, payload := range []string{
+		`{"original_url":"https://a.com","short_name":"one"}`,
+		`{"original_url":"https://b.com","short_name":"two"}`,
+	} {
+		req := httptest.NewRequest(http.MethodPost, "/api/links", bytes.NewBufferString(payload))
+		req.Header.Set("Content-Type", "application/json")
+		rec := httptest.NewRecorder()
+		router.ServeHTTP(rec, req)
+		if rec.Code != http.StatusCreated {
+			t.Fatalf("seed: %d body=%s", rec.Code, rec.Body.String())
+		}
+	}
+
+	body := `{"original_url":"https://c.com","short_name":"one"}`
+	req := httptest.NewRequest(http.MethodPut, "/api/links/2", bytes.NewBufferString(body))
+	req.Header.Set("Content-Type", "application/json")
+	rec := httptest.NewRecorder()
+	router.ServeHTTP(rec, req)
+	if rec.Code != http.StatusUnprocessableEntity {
+		t.Fatalf("want %d, got %d body=%s", http.StatusUnprocessableEntity, rec.Code, rec.Body.String())
+	}
+	var resp map[string]any
+	if err := json.Unmarshal(rec.Body.Bytes(), &resp); err != nil {
+		t.Fatal(err)
+	}
+	errs, _ := resp["errors"].(map[string]any)
+	if errs["short_name"] != "short name already in use" {
+		t.Fatalf("errors: %v", resp["errors"])
+	}
+}
+
 func TestUpdateInvalidURL(t *testing.T) {
 	router := testRouter(t)
 

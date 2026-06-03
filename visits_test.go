@@ -87,10 +87,10 @@ func TestRedirectNotFound(t *testing.T) {
 
 func TestLinkVisitsPagination(t *testing.T) {
 	router := testRouter(t)
-	seedLink(t, router, "p")
+	seedLink(t, router, "pag")
 
 	for i := 0; i < 11; i++ {
-		req := httptest.NewRequest(http.MethodGet, "/r/p", nil)
+		req := httptest.NewRequest(http.MethodGet, "/r/pag", nil)
 		rec := httptest.NewRecorder()
 		router.ServeHTTP(rec, req)
 		if rec.Code != http.StatusFound {

@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"net/http"
-	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/zept888/go-project-278/internal/linkutil"
@@ -14,11 +13,6 @@ import (
 type Links struct {
 	Store   store.Store
 	BaseURL string
-}
-
-type linkBody struct {
-	OriginalURL string `json:"original_url" binding:"required"`
-	ShortName   string `json:"short_name"`
 }
 
 func (h *Links) List(c *gin.Context) {
@@ -57,13 +51,12 @@ func (h *Links) List(c *gin.Context) {
 }
 
 func (h *Links) Create(c *gin.Context) {
-	var body linkBody
-	if err := c.ShouldBindJSON(&body); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+	body, ok := bindCreatePayload(c)
+	if !ok {
 		return
 	}
 
-	link, err := h.createLink(c.Request.Context(), body.OriginalURL, strings.TrimSpace(body.ShortName))
+	link, err := h.createLink(c.Request.Context(), body.OriginalURL, body.ShortName)
 	if err != nil {
 		writeStoreError(c, err)
 		return
@@ -111,18 +104,12 @@ func (h *Links) Update(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid id"})
 		return
 	}
-	var body linkBody
-	if err := c.ShouldBindJSON(&body); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-	shortName := strings.TrimSpace(body.ShortName)
-	if shortName == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "short_name is required"})
+	body, ok := bindUpdatePayload(c)
+	if !ok {
 		return
 	}
 
-	link, err := h.Store.Update(c.Request.Context(), id, body.OriginalURL, shortName)
+	link, err := h.Store.Update(c.Request.Context(), id, body.OriginalURL, body.ShortName)
 	if err != nil {
 		writeStoreError(c, err)
 		return
@@ -168,7 +155,7 @@ func writeStoreError(c *gin.Context, err error) {
 	case errors.Is(err, store.ErrNotFound):
 		c.JSON(http.StatusNotFound, gin.H{"error": "link not found"})
 	case errors.Is(err, store.ErrConflict):
-		c.JSON(http.StatusConflict, gin.H{"error": "short_name already exists"})
+		writeConflictError(c, "short_name", "short name already in use")
 	default:
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 	}

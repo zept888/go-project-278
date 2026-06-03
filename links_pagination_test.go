@@ -13,7 +13,7 @@ func TestLinksPagination(t *testing.T) {
 	router := testRouter(t)
 
 	for i := 1; i <= 11; i++ {
-		body := fmt.Sprintf(`{"original_url":"https://example.com/%d","short_name":"s%d"}`, i, i)
+		body := fmt.Sprintf(`{"original_url":"https://example.com/%d","short_name":"lnk%02d"}`, i, i)
 		req := httptest.NewRequest(http.MethodPost, "/api/links", bytes.NewBufferString(body))
 		req.Header.Set("Content-Type", "application/json")
 		rec := httptest.NewRecorder()

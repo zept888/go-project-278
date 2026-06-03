@@ -128,8 +128,16 @@ func TestShortNameConflict(t *testing.T) {
 		router.ServeHTTP(rec, req)
 	}
 
-	if rec.Code != http.StatusConflict {
-		t.Fatalf("want %d, got %d body=%s", http.StatusConflict, rec.Code, rec.Body.String())
+	if rec.Code != http.StatusUnprocessableEntity {
+		t.Fatalf("want %d, got %d body=%s", http.StatusUnprocessableEntity, rec.Code, rec.Body.String())
+	}
+	var resp map[string]any
+	if err := json.Unmarshal(rec.Body.Bytes(), &resp); err != nil {
+		t.Fatal(err)
+	}
+	errs, _ := resp["errors"].(map[string]any)
+	if errs["short_name"] != "short name already in use" {
+		t.Fatalf("errors: %v", resp["errors"])
 	}
 }
 
@@ -169,7 +177,7 @@ func TestNotFound(t *testing.T) {
 		t.Fatalf("get: want %d, got %d", http.StatusNotFound, rec.Code)
 	}
 
-	req = httptest.NewRequest(http.MethodPut, "/api/links/99", bytes.NewBufferString(`{"original_url":"https://x.com","short_name":"x"}`))
+	req = httptest.NewRequest(http.MethodPut, "/api/links/99", bytes.NewBufferString(`{"original_url":"https://x.com","short_name":"missing"}`))
 	req.Header.Set("Content-Type", "application/json")
 	rec = httptest.NewRecorder()
 	router.ServeHTTP(rec, req)

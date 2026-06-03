@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"log"
 	"os"
 	"time"
@@ -8,6 +9,12 @@ import (
 	"github.com/getsentry/sentry-go"
 	sentrygin "github.com/getsentry/sentry-go/gin"
 	"github.com/gin-gonic/gin"
+	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/joho/godotenv"
+	"github.com/zept888/go-project-278/internal/api"
+	"github.com/zept888/go-project-278/internal/db"
+	"github.com/zept888/go-project-278/internal/linkutil"
+	"github.com/zept888/go-project-278/internal/store"
 )
 
 func initSentry() error {
@@ -15,20 +22,15 @@ func initSentry() error {
 	if dsn == "" {
 		return nil
 	}
-
-	return sentry.Init(sentry.ClientOptions{
-		Dsn: dsn,
-	})
+	return sentry.Init(sentry.ClientOptions{Dsn: dsn})
 }
 
-func setupRouter() *gin.Engine {
+func setupRouter(st store.Store, baseURL string) *gin.Engine {
 	router := gin.Default()
 
 	sentryEnabled := os.Getenv("SENTRY_DSN") != ""
 	if sentryEnabled {
-		router.Use(sentrygin.New(sentrygin.Options{
-			Repanic: true,
-		}))
+		router.Use(sentrygin.New(sentrygin.Options{Repanic: true}))
 	}
 
 	router.GET("/ping", func(c *gin.Context) {
@@ -44,10 +46,42 @@ func setupRouter() *gin.Engine {
 		})
 	}
 
+	if st != nil {
+		h := &api.Links{Store: st, BaseURL: baseURL}
+		router.GET("/r/:shortName", h.Redirect)
+		links := router.Group("/api/links")
+		links.GET("", h.List)
+		links.POST("", h.Create)
+		links.GET("/:id", h.Get)
+		links.PUT("/:id", h.Update)
+		links.DELETE("/:id", h.Delete)
+	}
+
 	return router
 }
 
+func openStore(ctx context.Context) (store.Store, func(), error) {
+	dsn := os.Getenv("DATABASE_URL")
+	if dsn == "" {
+		return nil, func() {}, nil
+	}
+	pool, err := pgxpool.New(ctx, dsn)
+	if err != nil {
+		return nil, func() {}, err
+	}
+	return store.NewPostgres(db.New(pool)), pool.Close, nil
+}
+
+func baseURL(port string) string {
+	if v := os.Getenv("BASE_URL"); v != "" {
+		return linkutil.NormalizeBaseURL(v)
+	}
+	return "http://localhost:" + port
+}
+
 func main() {
+	_ = godotenv.Load()
+
 	if err := initSentry(); err != nil {
 		log.Printf("Sentry initialization failed: %v", err)
 	}
@@ -58,7 +92,18 @@ func main() {
 		port = "8080"
 	}
 
-	if err := setupRouter().Run(":" + port); err != nil {
+	ctx := context.Background()
+	st, closeDB, err := openStore(ctx)
+	if err != nil {
+		log.Fatalf("database connection failed: %v", err)
+	}
+	defer closeDB()
+
+	if st == nil {
+		log.Println("DATABASE_URL is not set, /api/links routes are disabled")
+	}
+
+	if err := setupRouter(st, baseURL(port)).Run(":" + port); err != nil {
 		log.Fatal(err)
 	}
 }

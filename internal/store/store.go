@@ -1,0 +1,26 @@
+package store
+
+import (
+	"context"
+	"errors"
+)
+
+var (
+	ErrNotFound = errors.New("link not found")
+	ErrConflict = errors.New("short_name already exists")
+)
+
+type Link struct {
+	ID          int64
+	OriginalURL string
+	ShortName   string
+}
+
+type Store interface {
+	List(ctx context.Context) ([]Link, error)
+	Get(ctx context.Context, id int64) (Link, error)
+	GetByShortName(ctx context.Context, shortName string) (Link, error)
+	Create(ctx context.Context, originalURL, shortName string) (Link, error)
+	Update(ctx context.Context, id int64, originalURL, shortName string) (Link, error)
+	Delete(ctx context.Context, id int64) error
+}

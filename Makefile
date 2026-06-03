@@ -1,4 +1,4 @@
-.PHONY: help tidy dev build test
+.PHONY: help tidy dev build test sqlc migrate
 
 help:
 	@echo "Available commands:"
@@ -17,3 +17,9 @@ build: ## Build application binary
 
 test: ## Run all tests
 	go test -race -v ./...
+
+sqlc: ## Generate data access code from SQL
+	sqlc generate
+
+migrate: ## Apply database migrations (requires DATABASE_URL)
+	goose -dir ./db/migrations postgres "$(DATABASE_URL)" up

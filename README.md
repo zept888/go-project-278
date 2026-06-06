@@ -8,6 +8,14 @@
 
 **https://go-project-278-ycui.onrender.com**
 
+## Локальный запуск
+
+```bash
+docker compose up -d
+npm run db:migrate
+npm run dev
+```
+
 ### Hexlet tests and linter status:
 
 [![Actions Status](https://github.com/zept888/go-project-278/actions/workflows/hexlet-check.yml/badge.svg)](https://github.com/zept888/go-project-278/actions)

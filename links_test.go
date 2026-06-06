@@ -7,19 +7,9 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
-
-	"github.com/gin-gonic/gin"
-	"github.com/zept888/go-project-278/internal/store"
 )
 
 const testBaseURL = "https://short.io"
-
-func testRouter(t *testing.T) *gin.Engine {
-	t.Helper()
-	gin.SetMode(gin.TestMode)
-	t.Setenv("SENTRY_DSN", "")
-	return setupRouter(store.NewMemory(), testBaseURL)
-}
 
 func TestLinksCRUD(t *testing.T) {
 	router := testRouter(t)

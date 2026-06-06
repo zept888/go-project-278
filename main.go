@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"os"
 	"time"
@@ -66,8 +67,7 @@ func setupRouter(st store.Store, baseURL string) *gin.Engine {
 func openStore(ctx context.Context) (store.Store, func(), error) {
 	dsn := os.Getenv("DATABASE_URL")
 	if dsn == "" {
-		log.Println("DATABASE_URL is not set, using in-memory store (local dev only)")
-		return store.NewMemory(), func() {}, nil
+		return nil, func() {}, fmt.Errorf("DATABASE_URL is required")
 	}
 	pool, err := pgxpool.New(ctx, dsn)
 	if err != nil {

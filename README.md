@@ -2,12 +2,6 @@
 
 Сервис сокращения ссылок (Gin + PostgreSQL).
 
-## Demo
-
-Приложение развёрнуто на Render:
-
-**https://go-project-278-ycui.onrender.com**
-
 ## Локальный запуск
 
 ```bash
@@ -15,6 +9,12 @@ docker compose up -d
 npm run db:migrate
 npm run dev
 ```
+
+## Demo
+
+Приложение развёрнуто на Render:
+
+**https://go-project-278-ycui.onrender.com**
 
 ### Hexlet tests and linter status:
 

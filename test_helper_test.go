@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"os"
 	"testing"
 
@@ -49,12 +50,14 @@ func testStore(t *testing.T) store.Store {
 
 func migrateTestDB(pool *pgxpool.Pool) error {
 	sqlDB := stdlib.OpenDBFromPool(pool)
-	defer sqlDB.Close()
 
 	if err := goose.SetDialect("postgres"); err != nil {
-		return err
+		return errors.Join(err, sqlDB.Close())
 	}
-	return goose.Up(sqlDB, "db/migrations")
+	if err := goose.Up(sqlDB, "db/migrations"); err != nil {
+		return errors.Join(err, sqlDB.Close())
+	}
+	return sqlDB.Close()
 }
 
 func resetTestDB(ctx context.Context, pool *pgxpool.Pool) error {
